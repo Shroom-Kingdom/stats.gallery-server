@@ -201,7 +201,7 @@ class LeaderboardCache {
 
         await Promise.all(
           group.map(async (account, j) => {
-            let remainingRetries = 3;
+            let remainingRetries = 5;
             let err;
             while (remainingRetries > 0) {
               try {
@@ -213,7 +213,7 @@ class LeaderboardCache {
                 // oh well
                 err = e;
                 remainingRetries--;
-                await sleep(2000);
+                await sleep(1000 + Math.random() * 2000);
               }
             }
             console.log(`Query ${name} ${i + j} failed on account ${account}, ${err}`);
