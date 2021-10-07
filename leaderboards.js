@@ -188,7 +188,7 @@ class LeaderboardCache {
   }
 
   async queryAndUpdate(name, accounts, queryFn, updateFn) {
-    const maxSimultaneousRequests = 10;
+    const maxSimultaneousRequests = 5;
 
     let group = [];
     for (let i = 0; i < accounts.length; i++) {
@@ -213,7 +213,7 @@ class LeaderboardCache {
                 // oh well
                 err = e;
                 remainingRetries--;
-                await sleep(1000 + Math.random() * 2000);
+                await sleep(1000 + Math.random() * 4000);
               }
             }
             console.log(`Query ${name} ${i + j} failed on account ${account}, ${err}`);
