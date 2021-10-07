@@ -215,7 +215,7 @@ class LeaderboardCache {
     };
 
     for (let i = 0; i < accounts.length; i++) {
-      if (i > 0 && i % 100 === 0) {
+      if (i > 0 && i % 1000 === 0) {
         const elapsed = Date.now() - startDate;
         const eta = new Date(Date.now() + elapsed * accounts.length / i);
         console.log(`${name} cache update: ${i} / ${accounts.length} (${(i * 100 / accounts.length).toFixed(2)}%, ETA: ${eta.toLocaleString()})`);
@@ -227,7 +227,7 @@ class LeaderboardCache {
           updateAccount(accounts[i], i);
           proceed = true;
         }
-        await sleep(100);
+        await sleep(50);
       }
     }
   }
