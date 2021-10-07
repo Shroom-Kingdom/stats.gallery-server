@@ -188,45 +188,47 @@ class LeaderboardCache {
   }
 
   async queryAndUpdate(name, accounts, queryFn, updateFn) {
-    const maxSimultaneousRequests = 5;
+    const maxSimultaneousRequests = 10;
+    let currentRequests = 0;
+    const startDate = Date.now();
 
-    let group = [];
+    const updateAccount = async (account, index) => {
+      currentRequests++;
+      let remainingRetries = 5;
+      let err;
+      while (remainingRetries > 0) {
+        try {
+          const value = await queryFn(account);
+          await updateFn(account, value);
+          // console.log('Updated ', account);
+          return;
+        } catch (e) {
+          // oh well
+          err = e;
+          remainingRetries--;
+          await sleep(1000 + Math.random() * 2000);
+        } finally {
+          currentRequests--;
+        }
+      }
+      console.log(`Query ${name} ${index} failed on account ${account}, ${err}`);
+    };
+
     for (let i = 0; i < accounts.length; i++) {
-      if (i > 0 && i % 1000 === 0) {
-        console.log(`${name} cache update: ${i} / ${accounts.length} (${(i * 100 / accounts.length).toFixed(2)}%)`);
+      if (i > 0 && i % 100 === 0) {
+        const elapsed = Date.now() - startDate;
+        const eta = new Date(Date.now() + elapsed * accounts.length / i);
+        console.log(`${name} cache update: ${i} / ${accounts.length} (${(i * 100 / accounts.length).toFixed(2)}%, ETA: ${eta.toLocaleString()})`);
       }
 
-      if (group.length >= maxSimultaneousRequests) {
-        // console.log('group', i / maxSimultaneousRequests);
-
-        await Promise.all(
-          group.map(async (account, j) => {
-            let remainingRetries = 5;
-            let err;
-            while (remainingRetries > 0) {
-              try {
-                const value = await queryFn(account);
-                await updateFn(account, value);
-                // console.log('Updated ', account);
-                return;
-              } catch (e) {
-                // oh well
-                err = e;
-                remainingRetries--;
-                await sleep(1000 + Math.random() * 4000);
-              }
-            }
-            console.log(`Query ${name} ${i + j} failed on account ${account}, ${err}`);
-          }),
-        );
-
-        // be nice
-        // await sleep(100);
-
-        group = [];
+      let proceed = false;
+      while (!proceed) {
+        if (currentRequests < maxSimultaneousRequests) {
+          updateAccount(accounts[i], i);
+          proceed = true;
+        }
+        await sleep(100);
       }
-
-      group.push(accounts[i]);
     }
   }
 
